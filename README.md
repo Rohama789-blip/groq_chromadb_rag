@@ -1,239 +1,232 @@
-# Groq + ChromaDB RAG
+# Groq ChromaDB RAG Assistant
 
-This is the corrected version using **Groq**, not xAI Grok.
+A simple Retrieval-Augmented Generation (RAG) application built with **Python, FastAPI, Groq, ChromaDB, and Sentence Transformers**.
 
-## Components
+The application allows users to provide documents and ask questions about their content. Relevant information is retrieved from the local ChromaDB vector database and then passed to a Groq LLM to generate an answer.
 
-```text
-Embeddings -> SentenceTransformers (local/free)
-Vector DB  -> ChromaDB (local/free)
-LLM        -> Groq API (Free tier available, rate limited)
-```
+## 🚀 Features
 
-## Architecture
+- 📄 Supports PDF, TXT, and Markdown documents
+- 🔎 Semantic document search using embeddings
+- 🧠 Retrieval-Augmented Generation (RAG)
+- ⚡ Fast responses using Groq
+- 🗄️ Local ChromaDB vector database
+- 🌐 FastAPI backend
+- 🤖 Sentence Transformers embeddings
+- 🔐 API key stored securely in `.env`
 
-```text
-Documents
-   |
-   v
-Extract text
-   |
-   v
-Chunk text
-   |
-   v
-SentenceTransformers
-(local embeddings)
-   |
-   v
-ChromaDB
+## 🛠️ Technologies Used
 
+- Python
+- FastAPI
+- Groq API
+- ChromaDB
+- Sentence Transformers
+- PyPDF
+- Uvicorn
+- HTML / CSS / JavaScript
 
-Question
-   |
-   v
-SentenceTransformers
-(local query embedding)
-   |
-   v
-ChromaDB similarity search
-   |
-   v
-Top-K relevant chunks
-   |
-   v
-Groq API
-   |
-   v
-LLM answer
-```
-
-## 1. Get a Groq API key
-
-Create/login to your GroqCloud account:
-
-https://console.groq.com
-
-Create an API key from the API Keys section.
-
-The Groq Free tier can be used without upgrading to Developer tier, but
-it has model-specific rate limits.
-
-## 2. Create `.env`
-
-Copy:
+## 📁 Project Structure
 
 ```text
-.env.example
+groq_chromadb_rag/
+│
+├── app/
+│   ├── document_loader.py
+│   ├── ingest_service.py
+│   └── ...
+│
+├── data/
+│   └── sample.txt
+│
+├── chroma_db/
+│   └── Local vector database
+│
+├── ingest.py
+├── api.py
+├── .env.example
+├── .gitignore
+├── requirements.txt
+└── README.md
 ```
 
-to:
+## ⚙️ Installation
 
-```text
-.env
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Rohama789-blip/groq_chromadb_rag.git
+cd groq_chromadb_rag
 ```
 
-Then:
+### 2. Create a virtual environment
 
-```env
-GROQ_API_KEY=gsk_your_real_key
-GROQ_MODEL=llama-3.3-70b-versatile
-
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-```
-
-There is no xAI key and no embedding API key.
-
-## 3. Install
-
-Windows PowerShell:
-
-```powershell
+```bash
 python -m venv venv
-.\venv\Scripts\Activate.ps1
+```
+
+### 3. Activate the virtual environment
+
+For Windows CMD:
+
+```cmd
+venv\Scripts\activate
+```
+
+### 4. Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-macOS/Linux:
+## 🔑 Configure Environment Variables
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-## 4. Add documents
-
-Put PDF, TXT, or Markdown files into:
-
-```text
-data/
-```
-
-## 5. Build ChromaDB
-
-```bash
-python ingest.py --reset
-```
-
-This step does NOT call Groq.
-
-It runs:
-
-```text
-documents
-   ->
-local SentenceTransformer
-   ->
-vectors
-   ->
-ChromaDB
-```
-
-## 6. Ask questions
-
-```bash
-python cli.py
-```
-
-Question processing:
-
-```text
-question
-   ->
-local embedding
-   ->
-ChromaDB search
-   ->
-top document chunks
-   ->
-Groq
-   ->
-answer
-```
-
-## 7. FastAPI
-
-Start:
-
-```bash
-uvicorn api:app --host 0.0.0.0 --port 8000 --reload
-```
-
-Query:
-
-```text
-POST http://localhost:8000/rag/query
-```
-
-JSON:
-
-```json
-{
-  "question": "What is an embedding?",
-  "top_k": 5
-}
-```
-
-You can restrict retrieval to one exact filename:
-
-```json
-{
-  "question": "What is the refund policy?",
-  "top_k": 5,
-  "source": "policy.pdf"
-}
-```
-
-## Environment variables
+Create a `.env` file based on `.env.example`.
 
 ```env
-GROQ_API_KEY=gsk_...
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_API_KEY=your_groq_api_key_here
+
+GROQ_MODEL=openai/gpt-oss-120b
+
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+
 CHROMA_PATH=./chroma_db
 CHROMA_COLLECTION=knowledge_base
+
 TOP_K=5
 CHUNK_SIZE=1200
 CHUNK_OVERLAP=200
 EMBEDDING_BATCH_SIZE=64
 ```
 
-## Cost behavior
+**Never upload your `.env` file or API key to GitHub.**
+
+## 📚 Add Documents
+
+Place your documents inside the `data` folder.
+
+Supported formats:
+
+- `.pdf`
+- `.txt`
+- `.md`
+
+Example:
 
 ```text
-Document embedding:     local/free
-Query embedding:        local/free
-ChromaDB:               local/free
-Groq LLM:               Free tier subject to rate limits
+data/
+├── sample.txt
+└── research_paper.pdf
 ```
 
-## Important embedding rule
+## 🔄 Ingest Documents
 
-Always use the same embedding model for document ingestion and query
-embedding.
+After adding or changing documents, run:
 
-If you change:
-
-```env
-EMBEDDING_MODEL=...
-```
-
-rebuild the database:
-
-```bash
+```cmd
 python ingest.py --reset
 ```
 
-## Default Groq model
+This creates the embeddings and stores the document data in ChromaDB.
 
-The example defaults to:
+## ▶️ Run the Application
 
-```text
-llama-3.3-70b-versatile
+Start the FastAPI server:
+
+```cmd
+uvicorn api:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-This is the model used in Groq's current Python quickstart at the time
-this project was created. Model availability and Free-tier limits can
-change, so you can replace `GROQ_MODEL` with another model available in
-your Groq Console.
+Then open:
+
+```text
+http://127.0.0.1:8000
+```
+
+## 💬 How It Works
+
+The application follows a simple RAG pipeline:
+
+```text
+Document
+   ↓
+Document Loader
+   ↓
+Text Chunking
+   ↓
+Sentence Transformer Embeddings
+   ↓
+ChromaDB
+   ↓
+User Question
+   ↓
+Semantic Search
+   ↓
+Relevant Context
+   ↓
+Groq LLM
+   ↓
+Generated Answer
+```
+
+## 🧪 Example
+
+After adding a document, you can ask questions such as:
+
+```text
+What is the main topic of this document?
+
+What methodology was used?
+
+What are the main findings?
+
+Summarize the document.
+```
+
+The system retrieves relevant information from the indexed documents before generating the answer.
+
+## 🔐 Security
+
+The following files and folders should not be committed to GitHub:
+
+```text
+.env
+venv/
+.venv/
+chroma_db/
+__pycache__/
+*.pyc
+```
+
+These are already included in `.gitignore`.
+
+## 📝 Notes
+
+- The application answers questions based on the documents available in the ChromaDB collection.
+- Run the ingestion command whenever documents are added or modified.
+- PDF files containing selectable text work best with the default PDF extraction.
+- Scanned/image-only PDFs may require OCR.
+
+## 👩‍💻 Author
+
+**Rohama**
+
+GitHub:  
+https://github.com/Rohama789-blip
+
+## ⭐ Future Improvements
+
+- Chat history
+- Multiple document collections
+- Better PDF processing
+- OCR support for scanned PDFs
+- Streaming responses
+- User authentication
+- Improved UI/UX
+- Deployment to a cloud platform
+
+---
+
+## 📄 License
+
+This project is intended for educational and development purposes.
